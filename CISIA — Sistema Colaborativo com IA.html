@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CISIA — Sistema de Informação Colaborativo com IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #0a0e17;
+  --bg-1: #0f1524;
+  --bg-2: #141b2d;
+  --card: #f4efe1;
+  --card-ink: #171308;
+  --card-muted: #6b6351;
+  --blue: #3b6bf6;
+  --blue-deep: #1f3fae;
+  --blue-soft: #8fabff;
+  --ink: #e7e9f0;
+  --muted: #8993ac;
+  --line: #232c42;
+  --gold: #d7b56d;
+  --green: #4fae8a;
+  --purple: #a685f2;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: radial-gradient(1200px 800px at 15% -10%, rgba(59,107,246,0.20), transparent 55%), var(--bg-0);
+  transition: background-color .2s ease;
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --ink: #e7e9f0; }
+}
+::selection { background: var(--blue-deep); color: #fff; }
+
+.app { min-height: 100%; display: flex; flex-direction: column; }
+
+/* ---------- Sync banner ---------- */
+.syncbar {
+  font-size: 12px; text-align: center; padding: 6px 10px; color: var(--muted);
+  background: var(--bg-1); border-bottom: 1px solid var(--line);
+}
+.syncbar b { color: var(--blue-soft); font-weight: 600; }
+.syncbar.local { color: var(--gold); }
+
+/* ---------- Topbar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(10,14,23,0.86);
+  backdrop-filter: blur(10px);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; cursor: pointer; }
+.brand-mark { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 9px; }
+.brand-mark img { height: 30px; width: auto; display: block; }
+.brand-mark .dot { color: var(--blue-soft); }
+.brand-tag { font-size: 12px; color: var(--muted); display: none; }
+@media (min-width: 700px) { .brand-tag { display: inline; } }
+
+.nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.nav button {
+  background: transparent; border: 1px solid transparent; color: var(--muted);
+  font-family: var(--font-body); font-size: 14px; padding: 9px 14px; border-radius: 8px;
+  cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.nav button:hover { color: var(--ink); border-color: var(--line); }
+.nav button.active { color: var(--ink); background: var(--bg-2); border-color: var(--line); }
+.nav .primary { background: var(--blue); color: #fff; }
+.nav .primary:hover { background: var(--blue-deep); border-color: var(--blue-deep); color: #fff; }
+.who { font-size: 13px; color: var(--muted); padding-right: 6px; display: none; align-items: center; gap: 6px; }
+@media (min-width: 900px) { .who { display: inline-flex; } }
+.score-chip { background: var(--bg-2); border: 1px solid var(--line); color: var(--gold); font-size: 11.5px; padding: 2px 9px; border-radius: 100px; }
+
+/* ---------- Layout ---------- */
+main.view { flex: 1; padding: clamp(20px, 4vw, 44px) clamp(16px, 4vw, 40px) 100px; max-width: 1180px; margin: 0 auto; width: 100%; }
+
+/* ---------- Auth ---------- */
+.auth-wrap { display: flex; justify-content: center; padding-top: clamp(10px, 6vh, 60px); }
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--card); color: var(--card-ink);
+  border-radius: 14px; padding: 34px 32px 28px;
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55);
+}
+.auth-card h1 { font-family: var(--font-display); font-size: 26px; margin: 0 0 4px; }
+.auth-card .sub { font-size: 13.5px; color: var(--card-muted); margin: 0 0 22px; line-height: 1.5; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--card-muted); margin-bottom: 6px; }
+.field input, .field select {
+  width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #d8d0b8;
+  background: #fffdf7; font-family: var(--font-body); font-size: 14.5px; color: var(--card-ink);
+}
+.field input:focus, .field select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.btn-block {
+  width: 100%; padding: 11px; border-radius: 8px; border: none; background: var(--blue); color: #fff;
+  font-family: var(--font-body); font-weight: 600; font-size: 14.5px; cursor: pointer; margin-top: 4px;
+  transition: background .15s ease;
+}
+.btn-block:disabled { opacity: .6; cursor: default; }
+.btn-block:hover:not(:disabled) { background: var(--blue-deep); }
+.switch-link { text-align: center; margin-top: 16px; font-size: 13px; }
+.switch-link a { color: var(--blue-deep); cursor: pointer; text-decoration: underline; }
+.auth-error { color: #a4372b; font-size: 12.5px; margin: 4px 0 10px; }
+.auth-note { font-size: 11.5px; color: var(--card-muted); margin-top: 18px; line-height: 1.5; border-top: 1px solid #e1d9c1; padding-top: 12px; }
+
+/* ---------- Feed ---------- */
+.feed-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.feed-head h1 { font-family: var(--font-display); font-size: clamp(26px, 4vw, 34px); margin: 0 0 6px; }
+.feed-head p { margin: 0; color: var(--muted); font-size: 14px; max-width: 46ch; }
+
+.subnav { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.subnav button { background: none; border: none; color: var(--muted); font-family: var(--font-body); font-size: 13.5px; padding: 10px 4px; margin-right: 18px; cursor: pointer; border-bottom: 2px solid transparent; }
+.subnav button.active { color: var(--ink); border-color: var(--blue); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.filters select, .filters input[type="search"] {
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--ink);
+  padding: 9px 12px; border-radius: 8px; font-family: var(--font-body); font-size: 13.5px;
+}
+.filters input[type="search"] { min-width: 200px; flex: 1; }
+
+.qlist { display: flex; flex-direction: column; gap: 12px; }
+.qcard {
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer; transition: border-color .15s ease, transform .1s ease;
+}
+.qcard:hover { border-color: var(--blue-soft); }
+.qcard .tags { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.tag { font-size: 11px; padding: 3px 9px; border-radius: 100px; border: 1px solid var(--line); color: var(--muted); }
+.tag.level { color: var(--gold); border-color: #4a4127; }
+.tag.subject { color: var(--blue-soft); border-color: var(--blue-deep); }
+.qcard h3 { margin: 0 0 6px; font-size: 17px; font-weight: 600; font-family: var(--font-body); }
+.qcard .excerpt { color: var(--muted); font-size: 13.5px; margin: 0; line-height: 1.5; }
+.qcard .meta { display: flex; gap: 16px; margin-top: 12px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.qcard .meta b { color: var(--ink); }
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty h3 { color: var(--ink); font-family: var(--font-display); font-weight: 500; font-size: 20px; margin-bottom: 6px; }
+
+/* ---------- Project cards ---------- */
+.pcard { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.pcard h3 { margin: 4px 0 8px; font-size: 17px; font-family: var(--font-body); }
+.pcard p { color: var(--muted); font-size: 13.5px; line-height: 1.55; margin: 0 0 12px; }
+.pcard a.link { color: var(--blue-soft); font-size: 13px; text-decoration: underline; }
+.pcard .meta { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tag.project { color: var(--purple); border-color: #4b3a7a; }
+.author-link { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.author-link:hover { color: var(--blue-soft); }
+.profile-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+.profile-head h1 { font-family: var(--font-display); font-size: 26px; margin: 0 0 4px; }
+.profile-head .sub2 { color: var(--muted); font-size: 13.5px; }
+.profile-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 18px; }
+@media (min-width: 640px) { .profile-grid { grid-template-columns: 1fr 1fr; } }
+.pfield { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.pfield label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 4px; }
+.pfield div.val { font-size: 14px; color: var(--ink); }
+.chat-panel { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; height: min(560px, 68vh); max-width: 640px; }
+.chat-head { padding: 14px 18px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.chat-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.chat-msg { max-width: 75%; padding: 9px 13px; border-radius: 12px; font-size: 14px; line-height: 1.45; position: relative; }
+.chat-msg.them { background: var(--bg-2); align-self: flex-start; border-bottom-left-radius: 3px; }
+.chat-msg.me { background: var(--blue-deep); color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+.chat-time { display: block; font-size: 10px; opacity: .6; margin-top: 4px; }
+.chat-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; }
+.chat-foot textarea { flex: 1; min-height: 40px; max-height: 100px; background: var(--bg-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px 10px; font-family: var(--font-body); font-size: 14px; resize: none; }
+
+/* ---------- Forms / panel ---------- */
+.panel { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 26px clamp(18px,3vw,30px); max-width: 720px; }
+.panel h1 { font-family: var(--font-display); font-size: 26px; margin: 0 0 20px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+.dark-field label { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+.dark-field { margin-bottom: 16px; }
+.dark-field input, .dark-field select, .dark-field textarea {
+  width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--bg-2); color: var(--ink); font-family: var(--font-body); font-size: 14.5px;
+}
+.dark-field textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+.dark-field input:focus, .dark-field select:focus, .dark-field textarea:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.btn { padding: 10px 20px; border-radius: 8px; border: none; background: var(--blue); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; font-family: var(--font-body); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn:hover:not(:disabled) { background: var(--blue-deep); }
+.btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.btn.ghost:hover { color: var(--ink); border-color: var(--blue-soft); }
+.btn.danger { background: transparent; border: 1px solid #5a2a26; color: #e08a7f; }
+.btn.danger:hover { background: #2a1512; }
+.btn.small { padding: 6px 12px; font-size: 12.5px; }
+.btn.ai { background: var(--purple); }
+.btn.ai:hover:not(:disabled) { background: #8768d6; }
+.err-msg { color: #e08a7f; font-size: 13px; margin: 8px 0; }
+
+/* ---------- Question detail ---------- */
+.back { color: var(--muted); font-size: 13px; cursor: pointer; margin-bottom: 18px; display: inline-block; }
+.back:hover { color: var(--ink); }
+.qdetail { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 24px clamp(18px,3vw,30px); margin-bottom: 22px; }
+.qdetail h1 { font-family: var(--font-display); font-size: clamp(22px,3vw,28px); margin: 10px 0 12px; }
+.qdetail .body { color: #cbd1e0; line-height: 1.65; font-size: 15px; white-space: pre-wrap; }
+.qdetail .byline { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+.answers-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 14px; flex-wrap: wrap; gap: 10px; }
+.answers-head h2 { font-family: var(--font-display); font-size: 19px; margin: 0; font-weight: 500; }
+.acard { background: var(--bg-1); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; }
+.acard.best { border-color: var(--green); box-shadow: 0 0 0 1px var(--green) inset; }
+.acard .best-flag { font-size: 11px; color: var(--green); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 8px; }
+.acard .body { color: #cbd1e0; line-height: 1.6; font-size: 14.5px; white-space: pre-wrap; }
+.acard .arow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
+.acard .byline { font-size: 12px; color: var(--muted); }
+.rate { display: flex; align-items: center; gap: 8px; }
+.rate .stars { display: flex; gap: 2px; }
+.rate button.star { background: none; border: none; cursor: pointer; font-size: 17px; color: #3a445e; padding: 2px; }
+.rate button.star.on { color: var(--gold); }
+.rate .score { font-size: 12.5px; color: var(--muted); margin-left: 4px; }
+
+.answer-form { margin-top: 22px; }
+.answer-form textarea { width: 100%; min-height: 110px; background: var(--bg-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 12px; font-family: var(--font-body); font-size: 14.5px; line-height: 1.5; resize: vertical; }
+.answer-form textarea:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.answer-form .actions { display: flex; justify-content: space-between; margin-top: 10px; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Admin ---------- */
+.admin-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 900px) { .admin-grid { grid-template-columns: 1fr 1fr; } }
+.admin-section h2 { font-family: var(--font-display); font-size: 19px; font-weight: 500; margin: 0 0 12px; }
+.admin-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.admin-row .info { font-size: 13.5px; }
+.admin-row .info b { display: block; margin-bottom: 2px; }
+.admin-row .info span { color: var(--muted); font-size: 12px; }
+.pill-banned { color: #e08a7f; font-size: 11px; border: 1px solid #5a2a26; padding: 2px 8px; border-radius: 100px; margin-left: 8px; }
+.stat-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+.stat { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; min-width: 130px; }
+.stat b { display: block; font-family: var(--font-display); font-size: 24px; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+footer.foot { text-align: center; padding: 26px; font-size: 12px; color: #4d5674; }
+.hidden { display: none !important; }
+
+/* ---------- AI Assistant widget ---------- */
+.ai-fab {
+  position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 40;
+  background: linear-gradient(135deg, var(--purple), var(--blue)); color: #fff; border: none;
+  padding: 13px 18px; border-radius: 100px; font-family: var(--font-body); font-weight: 600; font-size: 13.5px;
+  cursor: pointer; box-shadow: 0 12px 30px -8px rgba(90,60,220,0.55); display: flex; align-items: center; gap: 8px;
+}
+.ai-fab:hover { filter: brightness(1.08); }
+.ai-panel {
+  position: fixed; right: 20px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 41;
+  width: min(380px, calc(100vw - 40px)); max-height: min(560px, 72vh);
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ai-panel .ai-head { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+.ai-panel .ai-head b { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.ai-panel .ai-head button { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1; }
+.ai-panel .ai-sub { font-size: 11.5px; color: var(--muted); padding: 0 16px 10px; border-bottom: 1px solid var(--line); }
+.ai-body { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.ai-msg { font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+.ai-msg.user { color: var(--blue-soft); align-self: flex-end; text-align: right; }
+.ai-msg.assistant { color: #d3d7e6; }
+.ai-msg.system-note { color: var(--muted); font-size: 12px; font-style: italic; }
+.ai-foot { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; }
+.ai-foot textarea { flex: 1; min-height: 38px; max-height: 100px; background: var(--bg-2); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px 10px; font-family: var(--font-body); font-size: 13.5px; resize: none; }
+.ai-foot button { background: var(--purple); border: none; color: #fff; border-radius: 8px; padding: 0 14px; height: 38px; cursor: pointer; font-weight: 600; }
+.ai-foot button:disabled { opacity: .5; cursor: default; }
+.ai-insert { align-self: flex-start; background: var(--bg-2); border: 1px solid var(--blue-deep); color: var(--blue-soft); font-size: 11.5px; padding: 4px 10px; border-radius: 100px; cursor: pointer; margin-top: -4px; }
+
+.notif-btn { position: fixed; left: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 39; background: var(--bg-1); border: 1px solid var(--line); color: var(--muted); font-size: 12px; padding: 9px 14px; border-radius: 100px; cursor: pointer; }
+.notif-btn:hover { color: var(--ink); border-color: var(--blue-soft); }
+
+.theme-btn { background: transparent; border: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 8px 11px; border-radius: 8px; cursor: pointer; }
+.theme-btn:hover { color: var(--ink); border-color: var(--blue-soft); }
+.theme-panel {
+  position: fixed; right: 20px; top: calc(70px + env(safe-area-inset-top, 0px)); z-index: 41;
+  width: min(280px, calc(100vw - 40px));
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  padding: 16px;
+}
+.theme-panel h3 { font-family: var(--font-display); font-size: 15px; margin: 0 0 4px; font-weight: 600; }
+.theme-panel .sub3 { font-size: 11.5px; color: var(--muted); margin: 0 0 12px; }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.swatch { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.swatch.active { border-color: var(--blue-soft); }
+.theme-custom { display: flex; align-items: center; gap: 8px; }
+.theme-custom input[type="color"] { width: 40px; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; padding: 2px; }
+.theme-custom label { font-size: 12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* =====================================================================
+   CISIA — protótipo do TCC
+   Dados reais e colaborativos via capability "db" (compartilhado entre
+   todos os visitantes, em tempo real) com fallback automático para
+   localStorage quando a capability não está disponível nesta janela.
+   Assistente de IA via capability "sample".
+   ===================================================================== */
+
+const NIVEIS = ['Ensino Fundamental', 'Ensino Médio', 'Ensino Técnico', 'Ensino Superior'];
+const LOGO_URI = 'data:image/webp;base64,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';
+const PAPEIS = ['Aluno', 'Professor'];
+const DISCIPLINAS = ['Matemática', 'Português', 'Física', 'Química', 'Biologia', 'História', 'Geografia', 'Programação', 'Inglês', 'Filosofia'];
+const ADMIN_PASSWORD = 'cisia-admin';
+const SESSION_KEY = 'cisia_session_v1';
+const THEME_KEY = 'cisia_theme_bg_v1';
+const LOCAL_DB_KEY = 'cisia_local_db_v1';
+
+function uid(prefix) { return prefix + '_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeAgo(ts) {
+  const diff = Math.max(0, Date.now() - (ts || Date.now()));
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'agora mesmo';
+  if (m < 60) return m + ' min atrás';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'h atrás';
+  const d = Math.floor(h / 24);
+  return d + 'd atrás';
+}
+async function sha256Hex(text) {
+  try {
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    // fallback (very old / non-secure context) — still not plaintext
+    let h = 0;
+    for (let i = 0; i < text.length; i++) { h = (Math.imul(31, h) + text.charCodeAt(i)) | 0; }
+    return 'fnv' + Math.abs(h).toString(16);
+  }
+}
+function emailKey(email) { return String(email || '').trim().toLowerCase(); }
+
+/* ---------- Tema personalizável (cor de fundo escolhida pela pessoa) ---------- */
+const THEME_PRESETS = [
+  { nome: 'Azul CISIA', hex: '#0a0e17' },
+  { nome: 'Cinza-escuro', hex: '#1c1f26' },
+  { nome: 'Preto', hex: '#000000' },
+  { nome: 'Grafite', hex: '#2a2d34' },
+  { nome: 'Verde-noite', hex: '#0e1f19' },
+  { nome: 'Vinho', hex: '#20131a' },
+  { nome: 'Branco', hex: '#f5f6f8' },
+  { nome: 'Cinza-claro', hex: '#e7e6e2' },
+];
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  const n = h.length === 3 ? h.split('').map(c=>c+c).join('') : h;
+  const v = parseInt(n, 16);
+  return { r: (v>>16)&255, g: (v>>8)&255, b: v&255 };
+}
+function rgbToHex(r,g,b) { return '#' + [r,g,b].map(x => Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,'0')).join(''); }
+function mixHex(hexA, hexB, amount) {
+  const a = hexToRgb(hexA), b = hexToRgb(hexB);
+  return rgbToHex(a.r+(b.r-a.r)*amount, a.g+(b.g-a.g)*amount, a.b+(b.b-a.b)*amount);
+}
+function relativeLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const lin = v => { v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); };
+  return 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+}
+function applyTheme(hex, persist) {
+  const root = document.documentElement;
+  const light = relativeLuminance(hex) > 0.5;
+  root.style.setProperty('--bg-0', hex);
+  root.style.setProperty('--bg-1', mixHex(hex, light ? '#ffffff' : '#ffffff', light ? 0.55 : 0.06));
+  root.style.setProperty('--bg-2', mixHex(hex, '#ffffff', light ? 0.75 : 0.10));
+  root.style.setProperty('--line', mixHex(hex, light ? '#000000' : '#ffffff', light ? 0.14 : 0.12));
+  root.style.setProperty('--ink', light ? '#14171f' : '#e7e9f0');
+  root.style.setProperty('--muted', light ? '#5b6172' : '#8993ac');
+  if (persist) { try { localStorage.setItem(THEME_KEY, hex); } catch (e) {} }
+}
+function loadTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) applyTheme(saved, false);
+  } catch (e) {}
+}
+
+/* ===================== STORE ABSTRACTION ===================== */
+/* Same interface whether backed by the shared realtime db capability
+   or, when unavailable, a per-browser localStorage fallback. */
+const Store = {
+  mode: 'local', // 'db' | 'local'
+  dbApi: null,
+  listeners: { perguntas: [], respostas: [], projetos: [], usuarios: [], banidos: [], mensagens: [] },
+  local: { perguntas: [], respostas: [], projetos: [], usuarios: [], banidos: [], mensagens: [] },
+
+  async init() {
+    try {
+      if (window.claude && typeof window.claude.use === 'function') {
+        const db = await Promise.race([
+          window.claude.use('db'),
+          new Promise(res => setTimeout(() => res(null), 10500))
+        ]);
+        if (db) { this.dbApi = db; this.mode = 'db'; this.subscribeAll(); return; }
+      }
+    } catch (e) { /* fall through to local */ }
+    this.mode = 'local';
+    this.loadLocal();
+  },
+
+  loadLocal() {
+    try {
+      const raw = localStorage.getItem(LOCAL_DB_KEY);
+      if (raw) this.local = Object.assign(this.local, JSON.parse(raw));
+    } catch (e) {}
+    // fire once, async, so callers relying on the same event loop as db mode behave consistently
+    setTimeout(() => {
+      this.emit('perguntas', this.local.perguntas);
+      this.emit('respostas', this.local.respostas);
+      this.emit('projetos', this.local.projetos);
+      this.emit('usuarios', this.local.usuarios);
+      this.emit('banidos', this.local.banidos);
+      this.emit('mensagens', this.local.mensagens);
+    }, 0);
+    window.addEventListener('storage', (e) => {
+      if (e.key === LOCAL_DB_KEY) {
+        try { this.local = Object.assign(this.local, JSON.parse(e.newValue || '{}')); } catch (err) {}
+        this.emit('perguntas', this.local.perguntas);
+        this.emit('respostas', this.local.respostas);
+        this.emit('projetos', this.local.projetos);
+        this.emit('usuarios', this.local.usuarios);
+        this.emit('banidos', this.local.banidos);
+        this.emit('mensagens', this.local.mensagens);
+      }
+    });
+  },
+  saveLocal() { try { localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(this.local)); } catch (e) {} },
+
+  emit(col, data) { this.listeners[col].forEach(fn => fn(data)); },
+
+  on(col, fn) {
+    this.listeners[col].push(fn);
+    if (this.mode === 'db' && this.dbApi) {
+      this.dbApi.collection(col).onSnapshot(snap => {
+        const docs = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+        fn(docs);
+      }, () => fn([]));
+    }
+  },
+
+  subscribeAll() { /* individual .on() calls happen from app init */ },
+
+  async addDoc(col, data) {
+    if (this.mode === 'db' && this.dbApi) {
+      const ref = await this.dbApi.collection(col).add(data);
+      return ref.id;
+    }
+    const id = uid(col.slice(0, 1));
+    this.local[col].push(Object.assign({ id }, data));
+    this.saveLocal();
+    this.emit(col, this.local[col]);
+    return id;
+  },
+
+  async setDoc(col, id, data) {
+    if (this.mode === 'db' && this.dbApi) {
+      await this.dbApi.collection(col).doc(id).set(data);
+      return;
+    }
+    const idx = this.local[col].findIndex(d => d.id === id);
+    if (idx >= 0) this.local[col][idx] = Object.assign({ id }, data);
+    else this.local[col].push(Object.assign({ id }, data));
+    this.saveLocal();
+    this.emit(col, this.local[col]);
+  },
+
+  async updateDoc(col, id, patch) {
+    if (this.mode === 'db' && this.dbApi) {
+      await this.dbApi.collection(col).doc(id).update(patch);
+      return;
+    }
+    const idx = this.local[col].findIndex(d => d.id === id);
+    if (idx >= 0) this.local[col][idx] = Object.assign({}, this.local[col][idx], patch);
+    this.saveLocal();
+    this.emit(col, this.local[col]);
+  },
+
+  async getDoc(col, id) {
+    if (this.mode === 'db' && this.dbApi) {
+      const snap = await this.dbApi.collection(col).doc(id).get();
+      return snap.exists ? Object.assign({ id: snap.id }, snap.data()) : null;
+    }
+    return this.local[col].find(d => d.id === id) || null;
+  }
+};
+
+/* ===================== APP STATE ===================== */
+let state = {
+  view: 'login',
+  user: null,          // {nome, email, nivel}
+  isAdmin: false,
+  activeQuestionId: null,
+  feedTab: 'perguntas', // perguntas | projetos | ranking
+  profileEmail: null,
+  profileEdit: false,
+  chatWith: null,
+  themeOpen: false,
+  filterNivel: '',
+  filterDisciplina: '',
+  search: '',
+  authError: '',
+  authBusy: false,
+};
+
+let cache = { perguntas: [], respostas: [], projetos: [], usuarios: [], banidos: [], mensagens: [] };
+let notifiedAnswerIds = new Set();
+let notifBaselineSet = false;
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.email) { state.user = s; state.view = 'feed'; }
+    }
+  } catch (e) {}
+}
+function persistSession() {
+  try {
+    if (state.user) localStorage.setItem(SESSION_KEY, JSON.stringify(state.user));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch (e) {}
+}
+
+/* ===================== DERIVED HELPERS ===================== */
+function avgRating(a) {
+  if (!a.ratings || !a.ratings.length) return 0;
+  return a.ratings.reduce((s,r) => s + r.value, 0) / a.ratings.length;
+}
+function questionStats(q) {
+  const ans = cache.respostas.filter(a => a.perguntaId === q.id && !a.removido);
+  const avg = ans.length ? ans.reduce((s,a) => s + avgRating(a), 0) / ans.length : 0;
+  return { count: ans.length, avg };
+}
+function totalPoints(email) {
+  const fromAnswers = cache.respostas.filter(a => a.autorEmail === email && !a.removido)
+    .reduce((s,a) => s + (a.ratings||[]).reduce((x,r)=>x+r.value,0), 0);
+  const fromQuestions = cache.perguntas.filter(q => q.autorEmail === email && !q.removido)
+    .reduce((s,q) => s + (q.ratings||[]).reduce((x,r)=>x+r.value,0), 0);
+  return fromAnswers + fromQuestions;
+}
+function userScore(email) {
+  const mine = cache.respostas.filter(a => a.autorEmail === email && !a.removido && a.ratings && a.ratings.length);
+  if (!mine.length) return null;
+  const total = mine.reduce((s,a) => s + avgRating(a), 0);
+  return (total / mine.length).toFixed(1);
+}
+function isBanned(email) {
+  return cache.banidos.some(b => b.id === emailKey(email) && b.banido);
+}
+async function bumpStreak(email) {
+  try {
+    const u = await Store.getDoc('usuarios', email);
+    if (!u) return;
+    const today = new Date().toISOString().slice(0,10);
+    if (u.ultimoAcesso === today) return;
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    const nova = (u.ultimoAcesso === yesterday) ? (u.sequencia||0) + 1 : 1;
+    await Store.updateDoc('usuarios', email, { ultimoAcesso: today, sequencia: nova });
+  } catch (e) {}
+}
+function computeBadges(u, email) {
+  const badges = [];
+  const qCount = cache.perguntas.filter(q => q.autorEmail === email && !q.removido).length;
+  const aCount = cache.respostas.filter(a => a.autorEmail === email && !a.removido).length;
+  const pts = totalPoints(email);
+  if (qCount >= 1) badges.push({ icon: '🙋', nome: 'Primeira pergunta' });
+  if (aCount >= 1) badges.push({ icon: '💡', nome: 'Primeira resposta' });
+  if (aCount >= 10) badges.push({ icon: '🏅', nome: '10 respostas dadas' });
+  if (pts >= 20) badges.push({ icon: '⭐', nome: '20 pontos de qualidade' });
+  if (pts >= 50) badges.push({ icon: '🌟', nome: '50 pontos de qualidade' });
+  if ((u.sequencia||0) >= 3) badges.push({ icon: '🔥', nome: (u.sequencia||0) + ' dias seguidos' });
+  return badges;
+}
+function conversationsFor(email) {
+  const others = new Map();
+  cache.mensagens.forEach(m => {
+    if (m.de !== email && m.para !== email) return;
+    const other = m.de === email ? m.para : m.de;
+    const otherNome = m.de === email ? m.paraNome : m.deNome;
+    const cur = others.get(other);
+    if (!cur || m.criadoEm > cur.ultimoEm) others.set(other, { email: other, nome: otherNome, ultimoTexto: m.texto, ultimoEm: m.criadoEm });
+  });
+  return Array.from(others.values()).sort((a,b) => b.ultimoEm - a.ultimoEm);
+}
+function unreadCount(email) {
+  return cache.mensagens.filter(m => m.para === email && !m.lida).length;
+}
+
+/* ===================== RENDER ===================== */
+const app = document.getElementById('app');
+
+function render() {
+  const nav = state.user ? `
+    <div class="nav">
+      <button class="theme-btn" data-action="theme-toggle" title="Personalizar aparência">🎨</button>
+      <span class="who">${escapeHtml(state.user.nome)} · ${escapeHtml(state.user.nivel)} ${userScore(state.user.email) ? `<span class="score-chip">★ ${userScore(state.user.email)}</span>` : ''} ${(() => { const uu = cache.usuarios.find(x=>x.email===state.user.email); return uu && uu.sequencia >= 2 ? `<span class="score-chip">🔥 ${uu.sequencia}</span>` : ''; })()}</span>
+      <button data-nav="feed" class="${state.view==='feed'?'active':''}">Comunidade</button>
+      <button data-profile="${escapeHtml(state.user.email)}" class="${state.view==='perfil'?'active':''}">Meu perfil</button>
+      <button data-nav="mensagens" class="${state.view==='mensagens'||state.view==='conversa'?'active':''}">Mensagens${unreadCount(state.user.email) ? ` (${unreadCount(state.user.email)})` : ''}</button>
+      <button data-nav="novaPergunta" class="primary">Nova pergunta</button>
+      ${state.isAdmin ? `<button data-nav="admin" class="${state.view==='admin'?'active':''}">Painel admin</button>` : ''}
+      <button data-action="logout">Sair</button>
+    </div>` : `
+    <div class="nav">
+      <button class="theme-btn" data-action="theme-toggle" title="Personalizar aparência">🎨</button>
+      <button data-nav="admin" class="${state.view==='admin'?'active':''}">Painel admin</button>
+      <button data-nav="login" class="primary ${state.view==='login'?'active':''}">Entrar</button>
+    </div>`;
+
+  let body = '';
+  if (state.view === 'login') body = renderLogin();
+  else if (state.view === 'cadastro') body = renderCadastro();
+  else if (state.view === 'feed') body = renderFeed();
+  else if (state.view === 'novaPergunta') body = renderNovaPergunta();
+  else if (state.view === 'novoProjeto') body = renderNovoProjeto();
+  else if (state.view === 'pergunta') body = renderPergunta();
+  else if (state.view === 'admin') body = renderAdmin();
+  else if (state.view === 'perfil') body = renderPerfil();
+  else if (state.view === 'mensagens') body = renderMensagens();
+  else if (state.view === 'conversa') body = renderConversa();
+  else body = renderLogin();
+
+  const syncLabel = Store.mode === 'db'
+    ? '<b>tempo real</b> — dados compartilhados com todos os visitantes desta página'
+    : 'modo local — sem conexão em tempo real disponível nesta janela; dados ficam só neste navegador';
+
+  app.innerHTML = `
+    <div class="syncbar ${Store.mode === 'local' ? 'local' : ''}">${syncLabel}</div>
+    <div class="topbar">
+      <div class="brand" data-nav="${state.user ? 'feed' : 'login'}">
+        <span class="brand-mark"><img src="${LOGO_URI}" alt="CISIA" />CISIA<span class="dot">.</span></span>
+        <span class="brand-tag">estudo colaborativo, com qualidade</span>
+      </div>
+      ${nav}
+    </div>
+    <main class="view">${body}</main>
+    <footer class="foot">Protótipo do TCC CISIA — Etec Jacinto Ferreira de Sá.</footer>
+  `;
+  renderAiWidget();
+  renderNotifButton();
+  renderThemeWidget();
+  bindEvents();
+}
+
+/* ---------- Login ---------- */
+function renderLogin() {
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Entrar na CISIA</h1>
+      <p class="sub">Entre com seu e-mail e senha para tirar dúvidas, responder colegas e acompanhar sua pontuação de qualidade.</p>
+      ${state.authError ? `<div class="auth-error">${escapeHtml(state.authError)}</div>` : ''}
+      <form id="loginForm">
+        <div class="field"><label>E-mail</label><input required type="email" name="email" placeholder="seu@email.com"></div>
+        <div class="field"><label>Senha</label><input required type="password" name="senha" placeholder="Sua senha"></div>
+        <button class="btn-block" type="submit" ${state.authBusy ? 'disabled' : ''}>${state.authBusy ? 'Entrando…' : 'Entrar na CISIA'}</button>
+      </form>
+      <div class="switch-link">Ainda não tenho conta — <a data-nav="cadastro">cadastrar</a></div>
+      <div class="auth-note">Login e senha ficam guardados de forma compartilhada (com hash, nunca em texto puro) para que sua conta funcione em qualquer navegador. Ative as notificações do navegador para saber quando alguém responder ou avaliar seu conteúdo.</div>
+    </div>
+  </div>`;
+}
+
+function renderCadastro() {
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Criar conta</h1>
+      <p class="sub">Crie sua conta com e-mail e senha para tirar dúvidas, responder colegas e acompanhar sua pontuação de qualidade.</p>
+      ${state.authError ? `<div class="auth-error">${escapeHtml(state.authError)}</div>` : ''}
+      <form id="cadastroForm">
+        <div class="field"><label>Seu nome</label><input required name="nome" placeholder="Ex: Marina Souza"></div>
+        <div class="field"><label>E-mail</label><input required type="email" name="email" placeholder="seu@email.com"></div>
+        <div class="field"><label>Senha</label><input required minlength="6" type="password" name="senha" placeholder="Mínimo 6 caracteres"></div>
+        <div class="field"><label>Você é</label>
+          <select name="papel">${PAPEIS.map(p => `<option>${p}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Seu nível de ensino</label>
+          <select name="nivel">${NIVEIS.map(n => `<option>${n}</option>`).join('')}</select>
+        </div>
+        <button class="btn-block" type="submit" ${state.authBusy ? 'disabled' : ''}>${state.authBusy ? 'Criando…' : 'Criar conta'}</button>
+      </form>
+      <div class="switch-link">Já tenho conta — <a data-nav="login">entrar</a></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Feed ---------- */
+function renderFeed() {
+  const tabs = `
+  <div class="subnav">
+    <button data-tab="perguntas" class="${state.feedTab==='perguntas'?'active':''}">Perguntas</button>
+    <button data-tab="projetos" class="${state.feedTab==='projetos'?'active':''}">Publicações</button>
+    <button data-tab="ranking" class="${state.feedTab==='ranking'?'active':''}">Ranking</button>
+  </div>`;
+  if (state.feedTab === 'ranking') return tabs + renderRanking();
+
+  if (state.feedTab === 'projetos') return tabs + renderProjetosFeed();
+
+  let list = cache.perguntas.filter(q => !q.removido);
+  if (state.filterNivel) list = list.filter(q => q.nivel === state.filterNivel);
+  if (state.filterDisciplina) list = list.filter(q => q.disciplina === state.filterDisciplina);
+  if (state.search.trim()) {
+    const s = state.search.toLowerCase();
+    list = list.filter(q => (q.titulo||'').toLowerCase().includes(s) || (q.corpo||'').toLowerCase().includes(s));
+  }
+  list.sort((a,b) => (b.criadoEm||0) - (a.criadoEm||0));
+
+  const cards = list.map(q => {
+    const { count, avg } = questionStats(q);
+    return `
+    <div class="qcard" data-open="${q.id}">
+      <div class="tags">
+        <span class="tag level">${escapeHtml(q.nivel)}</span>
+        <span class="tag subject">${escapeHtml(q.disciplina)}</span>
+      </div>
+      <h3>${escapeHtml(q.titulo)}</h3>
+      <p class="excerpt">${escapeHtml((q.corpo||'').slice(0, 140))}${(q.corpo||'').length > 140 ? '…' : ''}</p>
+      <div class="meta">
+        <span><b>${count}</b> resposta${count === 1 ? '' : 's'}</span>
+        ${avg > 0 ? `<span>qualidade média <b>${avg.toFixed(1)}★</b></span>` : ''}
+        <span class="author-link" data-profile="${escapeHtml(q.autorEmail)}" data-stop="1">${escapeHtml(q.autorNome)}</span> · ${timeAgo(q.criadoEm)}
+      </div>
+    </div>`;
+  }).join('');
+
+  return tabs + `
+  <div class="feed-head">
+    <div>
+      <h1>Perguntas da comunidade</h1>
+      <p>Organizadas por nível de ensino e disciplina, avaliadas pela qualidade das respostas — não pela quantidade.</p>
+    </div>
+  </div>
+  <div class="filters">
+    <select id="fNivel"><option value="">Todos os níveis</option>${NIVEIS.map(n => `<option ${state.filterNivel===n?'selected':''}>${n}</option>`).join('')}</select>
+    <select id="fDisciplina"><option value="">Todas as disciplinas</option>${DISCIPLINAS.map(d => `<option ${state.filterDisciplina===d?'selected':''}>${d}</option>`).join('')}</select>
+    <input id="fSearch" type="search" placeholder="Buscar por palavra-chave..." value="${escapeHtml(state.search)}">
+  </div>
+  <div class="qlist">
+    ${cards || `<div class="empty"><h3>Nenhuma pergunta por aqui ainda</h3><p>Seja a primeira pessoa a publicar uma dúvida.</p></div>`}
+  </div>`;
+}
+
+function renderProjetosFeed() {
+  const list = cache.projetos.filter(p => !p.removido).slice().sort((a,b) => (b.criadoEm||0) - (a.criadoEm||0));
+  const cards = list.map(p => `
+    <div class="pcard">
+      <span class="tag project">${escapeHtml(p.tipo || 'Projeto extracurricular')}</span>
+      <h3>${escapeHtml(p.titulo)}</h3>
+      <p>${escapeHtml(p.descricao)}</p>
+      ${p.link ? `<a class="link" href="${escapeHtml(p.link)}" target="_blank" rel="noopener">Ver publicação →</a>` : ''}
+      ${p.documento ? `<a class="link" href="${escapeHtml(p.documento)}" target="_blank" rel="noopener">📎 Documento anexo</a>` : ''}
+      <div class="meta">
+        <span>por <span class="author-link" data-profile="${escapeHtml(p.autorEmail)}">${escapeHtml(p.autorNome)}</span> · ${timeAgo(p.criadoEm)}</span>
+        <button class="btn ghost small" data-react="${p.id}" style="margin-left:auto;">${(p.reacoes||[]).includes(state.user?state.user.email:'') ? '❤️' : '🤍'} ${(p.reacoes||[]).length || ''}</button>
+      </div>
+    </div>`).join('');
+
+  return `
+  <div class="feed-head">
+    <div>
+      <h1>Publicações</h1>
+      <p>Projetos extracurriculares, artigos científicos, TCCs e pesquisas da comunidade CISIA.</p>
+    </div>
+    ${state.user ? `<button class="btn" data-nav="novoProjeto">Nova publicação</button>` : ''}
+  </div>
+  <div class="qlist">
+    ${cards || `<div class="empty"><h3>Nenhuma publicação ainda</h3><p>${state.user ? 'Compartilhe a primeira!' : 'Entre para publicar.'}</p></div>`}
+  </div>`;
+}
+
+function renderRanking() {
+  const rows = cache.usuarios.map(u => ({ u, pts: totalPoints(u.email) })).sort((a,b) => b.pts - a.pts);
+  const list = rows.map((r, i) => `
+    <div class="admin-row">
+      <div class="info"><b>${i+1}º · <span class="author-link" data-profile="${escapeHtml(r.u.email)}">${escapeHtml(r.u.nome)}</span></b><span>${escapeHtml(r.u.papel||'Aluno')} · ${escapeHtml(r.u.nivel||'')}</span></div>
+      <span class="score-chip">★ ${r.pts} pts</span>
+    </div>`).join('');
+  return `
+  <div class="feed-head"><div><h1>Ranking da comunidade</h1><p>Pontos vêm das avaliações que suas perguntas e respostas recebem — quanto melhor o feedback, mais pontos.</p></div></div>
+  ${list || `<p style="color:var(--muted); font-size:13.5px;">Ainda sem pontuações.</p>`}`;
+}
+
+/* ---------- Nova pergunta ---------- */
+function renderNovaPergunta() {
+  return `
+  <span class="back" data-nav="feed">← voltar para perguntas</span>
+  <div class="panel">
+    <h1>Publicar uma dúvida</h1>
+    <form id="novaPerguntaForm">
+      <div class="dark-field"><label>Título</label><input required name="titulo" placeholder="Resuma sua dúvida em uma frase"></div>
+      <div class="grid2">
+        <div class="dark-field"><label>Nível de ensino</label>
+          <select name="nivel">${NIVEIS.map(n => `<option ${n===state.user.nivel?'selected':''}>${n}</option>`).join('')}</select>
+        </div>
+        <div class="dark-field"><label>Disciplina</label>
+          <select name="disciplina">${DISCIPLINAS.map(d => `<option>${d}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="dark-field"><label>Descreva sua dúvida</label><textarea required name="corpo" placeholder="Explique o que você já tentou e onde travou — quanto mais contexto, melhores as respostas."></textarea></div>
+      <button class="btn" type="submit">Publicar pergunta</button>
+    </form>
+  </div>`;
+}
+
+function renderNovoProjeto() {
+  return `
+  <span class="back" data-nav="feed">← voltar</span>
+  <div class="panel">
+    <h1>Nova publicação</h1>
+    <form id="novoProjetoForm">
+      <div class="dark-field"><label>Tipo</label>
+        <select name="tipo"><option>Projeto extracurricular</option><option>Artigo científico</option><option>TCC</option><option>Pesquisa</option></select>
+      </div>
+      <div class="dark-field"><label>Título</label><input required name="titulo" placeholder="Ex: App de estudos para Enem"></div>
+      <div class="dark-field"><label>Descrição</label><textarea required name="descricao" placeholder="Do que se trata, o que você aprendeu, quem pode participar..."></textarea></div>
+      <div class="grid2">
+        <div class="dark-field"><label>Link (opcional)</label><input type="url" name="link" placeholder="https://..."></div>
+        <div class="dark-field"><label>Documento anexo (link)</label><input type="url" name="documento" placeholder="https://..."></div>
+      </div>
+      <button class="btn" type="submit">Publicar</button>
+    </form>
+  </div>`;
+}
+
+/* ---------- Pergunta detail ---------- */
+function renderPergunta() {
+  const q = cache.perguntas.find(x => x.id === state.activeQuestionId);
+  if (!q) return `<p>Pergunta não encontrada. <span class="back" data-nav="feed">Voltar</span></p>`;
+  const answers = cache.respostas.filter(a => a.perguntaId === q.id && !a.removido).slice().sort((a,b) => avgRating(b) - avgRating(a));
+  const bestId = answers.length ? answers[0].id : null;
+  const bestScore = answers.length ? avgRating(answers[0]) : 0;
+
+  const answerCards = answers.map(a => {
+    const score = avgRating(a);
+    const isBest = a.id === bestId && bestScore > 0 && answers.length > 1;
+    const myRating = state.user ? ((a.ratings||[]).find(r => r.email === state.user.email)?.value || 0) : 0;
+    return `
+    <div class="acard ${isBest ? 'best' : ''}">
+      ${isBest ? '<div class="best-flag">★ MELHOR RESPOSTA AVALIADA</div>' : ''}
+      <div class="body">${escapeHtml(a.corpo)}</div>
+      <div class="arow">
+        <div class="byline"><span class="author-link" data-profile="${escapeHtml(a.autorEmail)}">${escapeHtml(a.autorNome)}</span> · ${timeAgo(a.criadoEm)}</div>
+        <div class="rate" data-answer="${a.id}">
+          <div class="stars">
+            ${[1,2,3,4,5].map(n => `<button class="star ${n<=myRating?'on':''}" data-star="${n}" title="Avaliar qualidade">★</button>`).join('')}
+          </div>
+          <span class="score">${score > 0 ? score.toFixed(1) + ' (' + (a.ratings||[]).length + ')' : 'sem avaliações'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <span class="back" data-nav="feed">← voltar para perguntas</span>
+  <div class="qdetail">
+    <div class="tags">
+      <span class="tag level">${escapeHtml(q.nivel)}</span>
+      <span class="tag subject">${escapeHtml(q.disciplina)}</span>
+    </div>
+    <h1>${escapeHtml(q.titulo)}</h1>
+    <div class="body">${escapeHtml(q.corpo)}</div>
+    <div class="byline">Publicado por <span class="author-link" data-profile="${escapeHtml(q.autorEmail)}">${escapeHtml(q.autorNome)}</span> · ${timeAgo(q.criadoEm)}</div>
+    ${state.user ? (() => { const myQ = (q.ratings||[]).find(r => r.email === state.user.email)?.value || 0;
+      return `<div class="rate" data-question="${q.id}" style="margin-top:12px;"><span style="font-size:12px; color:var(--muted);">avaliar pergunta:</span><div class="stars">${[1,2,3,4,5].map(n => `<button class="star ${n<=myQ?'on':''}" data-star="${n}" title="Avaliar pergunta">★</button>`).join('')}</div></div>`; })() : ''}
+  </div>
+
+  <div class="answers-head">
+    <h2>${answers.length} resposta${answers.length===1?'':'s'}</h2>
+    ${state.user ? `<button class="btn ai small" data-ai-draft="1">✦ Pedir ajuda da IA para rascunhar</button>` : ''}
+  </div>
+  ${answerCards || `<p style="color:var(--muted); font-size:14px;">Ainda sem respostas. Avalie explicações completas, não apenas o resultado final.</p>`}
+
+  ${state.user ? `
+  <div class="answer-form">
+    <form id="answerForm">
+      <textarea required name="corpo" id="answerBody" placeholder="Explique passo a passo, não só o resultado final..."></textarea>
+      <div class="actions"><span></span><button class="btn" type="submit">Publicar resposta</button></div>
+    </form>
+  </div>` : `<p style="color:var(--muted); font-size:13.5px;"><span data-nav="login" style="text-decoration:underline; cursor:pointer;">Entre</span> para responder e avaliar.</p>`}
+  `;
+}
+
+/* ---------- Admin ---------- */
+function renderAdmin() {
+  if (!state.isAdmin) {
+    return `
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <h1>CISIA <span style="font-size:11px; vertical-align:middle; background:var(--blue); color:#fff; padding:2px 8px; border-radius:100px; font-family:var(--font-body);">admin</span></h1>
+        <p class="sub">Área restrita para administração da plataforma: moderação de usuários e conteúdo.</p>
+        ${state.authError ? `<div class="auth-error">${escapeHtml(state.authError)}</div>` : ''}
+        <form id="adminForm">
+          <div class="field"><label>Senha de administrador</label><input required type="password" name="senha" placeholder="••••••••"></div>
+          <button class="btn-block" type="submit">Entrar</button>
+        </form>
+        <div class="switch-link"><a data-nav="${state.user ? 'feed' : 'login'}">← voltar para o login normal</a></div>
+        <div class="auth-note">Senha de demonstração: <b>${ADMIN_PASSWORD}</b></div>
+      </div>
+    </div>`;
+  }
+
+  const totalQ = cache.perguntas.filter(q => !q.removido).length;
+  const totalA = cache.respostas.filter(a => !a.removido).length;
+  const totalU = cache.usuarios.length;
+  const totalP = cache.projetos.filter(p => !p.removido).length;
+
+  const usersRows = cache.usuarios.map(u => {
+    const banned = isBanned(u.email || u.id);
+    const email = u.email || u.id;
+    return `
+    <div class="admin-row">
+      <div class="info"><b>${escapeHtml(u.nome)} ${banned ? '<span class="pill-banned">banido</span>' : ''}</b><span>${escapeHtml(email)} · ${escapeHtml(u.nivel||'')}</span></div>
+      <button class="btn ${banned ? 'ghost' : 'danger'} small" data-toggle-ban="${escapeHtml(email)}">${banned ? 'Desbanir' : 'Banir'}</button>
+    </div>`;
+  }).join('') || `<p style="color:var(--muted); font-size:13.5px;">Nenhum usuário cadastrado ainda.</p>`;
+
+  const questionRows = cache.perguntas.filter(q => !q.removido).slice().sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0)).map(q => `
+    <div class="admin-row">
+      <div class="info"><b>${escapeHtml(q.titulo)}</b><span>${escapeHtml(q.disciplina)} · ${escapeHtml(q.autorNome)}</span></div>
+      <button class="btn danger small" data-remove-question="${q.id}">Remover</button>
+    </div>`).join('') || `<p style="color:var(--muted); font-size:13.5px;">Nenhuma pergunta publicada ainda.</p>`;
+
+  const projectRows = cache.projetos.filter(p => !p.removido).slice().sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0)).map(p => `
+    <div class="admin-row">
+      <div class="info"><b>${escapeHtml(p.titulo)}</b><span>${escapeHtml(p.autorNome)}</span></div>
+      <button class="btn danger small" data-remove-project="${p.id}">Remover</button>
+    </div>`).join('') || `<p style="color:var(--muted); font-size:13.5px;">Nenhum projeto publicado ainda.</p>`;
+
+  return `
+  <h1 style="font-family:var(--font-display); font-size:28px; margin:0 0 20px;">Painel administrativo</h1>
+  <div class="stat-row">
+    <div class="stat"><b>${totalU}</b><span>usuários</span></div>
+    <div class="stat"><b>${totalQ}</b><span>perguntas ativas</span></div>
+    <div class="stat"><b>${totalA}</b><span>respostas</span></div>
+    <div class="stat"><b>${totalP}</b><span>projetos</span></div>
+  </div>
+  <div class="admin-grid">
+    <div class="admin-section"><h2>Usuários e moderação</h2>${usersRows}</div>
+    <div class="admin-section"><h2>Perguntas publicadas</h2>${questionRows}</div>
+  </div>
+  <div class="admin-section" style="margin-top:24px;"><h2>Projetos extracurriculares</h2>${projectRows}</div>
+  `;
+}
+
+/* ---------- Perfil ---------- */
+function renderPerfil() {
+  const email = state.profileEmail || (state.user && state.user.email);
+  const u = cache.usuarios.find(x => x.email === email);
+  if (!u) return `<p style="color:var(--muted);">Perfil não encontrado. <span class="back" data-nav="feed">Voltar</span></p>`;
+  const isSelf = state.user && state.user.email === email;
+  const pts = totalPoints(email);
+  const qtd = { p: cache.perguntas.filter(q => q.autorEmail === email && !q.removido).length, r: cache.respostas.filter(a => a.autorEmail === email && !a.removido).length };
+
+  if (isSelf && state.profileEdit) {
+    return `
+    <span class="back" data-nav="feed">← voltar</span>
+    <div class="panel">
+      <h1>Editar perfil</h1>
+      <form id="perfilForm">
+        <div class="dark-field"><label>Sobre você (bio)</label><textarea name="bio" placeholder="Conte um pouco sobre você...">${escapeHtml(u.bio||'')}</textarea></div>
+        <div class="grid2">
+          <div class="dark-field"><label>Trabalha em / trabalhou em</label><input name="empresaAtual" value="${escapeHtml(u.empresaAtual||'')}" placeholder="Ex: Empresa X (2023–atual)"></div>
+          <div class="dark-field"><label>Estuda em / estudou em</label><input name="escolaAtual" value="${escapeHtml(u.escolaAtual||'')}" placeholder="Ex: Etec Jacinto Ferreira de Sá"></div>
+          <div class="dark-field"><label>Idade</label><input name="idade" value="${escapeHtml(u.idade||'')}" placeholder="Ex: 17"></div>
+          <div class="dark-field"><label>Estado civil</label><input name="estadoCivil" value="${escapeHtml(u.estadoCivil||'')}" placeholder="Ex: Solteiro(a)"></div>
+        </div>
+        <button class="btn" type="submit">Salvar perfil</button>
+        <button class="btn ghost" type="button" data-cancel-edit="1" style="margin-left:8px;">Cancelar</button>
+      </form>
+    </div>`;
+  }
+
+  return `
+  <span class="back" data-nav="feed">← voltar</span>
+  <div class="profile-head">
+    <div>
+      <h1>${escapeHtml(u.nome)}</h1>
+      <div class="sub2">${escapeHtml(u.papel||'Aluno')} · ${escapeHtml(u.nivel||'')} · <span class="score-chip">★ ${pts} pts</span></div>
+    </div>
+    ${isSelf ? `<button class="btn ghost small" data-edit-profile="1">Editar perfil</button>` : `<button class="btn small" data-open-chat="${escapeHtml(u.email)}" data-open-chat-nome="${escapeHtml(u.nome)}">✉ Enviar mensagem</button>`}
+  </div>
+  ${u.bio ? `<p style="color:#cbd1e0; font-size:14.5px; line-height:1.6; max-width:60ch;">${escapeHtml(u.bio)}</p>` : ''}
+  ${computeBadges(u, email).length ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">${computeBadges(u, email).map(b => `<span class="tag" title="${escapeHtml(b.nome)}" style="font-size:12.5px; padding:5px 11px;">${b.icon} ${escapeHtml(b.nome)}</span>`).join('')}</div>` : ''}
+  <div class="profile-grid">
+    <div class="pfield"><label>Trabalha em</label><div class="val">${escapeHtml(u.empresaAtual) || '—'}</div></div>
+    <div class="pfield"><label>Formação</label><div class="val">${escapeHtml(u.escolaAtual) || '—'}</div></div>
+    <div class="pfield"><label>Idade</label><div class="val">${escapeHtml(u.idade) || '—'}</div></div>
+    <div class="pfield"><label>Estado civil</label><div class="val">${escapeHtml(u.estadoCivil) || '—'}</div></div>
+    <div class="pfield"><label>Perguntas publicadas</label><div class="val">${qtd.p}</div></div>
+    <div class="pfield"><label>Respostas dadas</label><div class="val">${qtd.r}</div></div>
+    <div class="pfield"><label>Sequência de dias ativos</label><div class="val">${u.sequencia ? '🔥 ' + u.sequencia : '—'}</div></div>
+  </div>`;
+}
+
+/* ---------- Mensagens ---------- */
+function renderMensagens() {
+  const list = conversationsFor(state.user.email);
+  const rows = list.map(c => `
+    <div class="admin-row" style="cursor:pointer;" data-open-chat="${escapeHtml(c.email)}" data-open-chat-nome="${escapeHtml(c.nome||'')}">
+      <div class="info"><b>${escapeHtml(c.nome||c.email)}</b><span>${escapeHtml((c.ultimoTexto||'').slice(0,60))}</span></div>
+      <span style="font-size:11.5px; color:var(--muted);">${timeAgo(c.ultimoEm)}</span>
+    </div>`).join('');
+  return `
+  <div class="feed-head"><div><h1>Mensagens</h1><p>Converse diretamente com outros perfis da comunidade CISIA.</p></div></div>
+  ${rows || `<p style="color:var(--muted); font-size:13.5px;">Nenhuma conversa ainda. Envie uma mensagem a partir do perfil de alguém.</p>`}`;
+}
+
+function renderConversa() {
+  const other = cache.usuarios.find(u => u.email === state.chatWith);
+  const msgs = cache.mensagens.filter(m =>
+    (m.de === state.user.email && m.para === state.chatWith) || (m.de === state.chatWith && m.para === state.user.email)
+  ).sort((a,b) => a.criadoEm - b.criadoEm);
+  const bubbles = msgs.map(m => `
+    <div class="chat-msg ${m.de === state.user.email ? 'me' : 'them'}">${escapeHtml(m.texto)}<span class="chat-time">${timeAgo(m.criadoEm)}</span></div>`).join('');
+  return `
+  <span class="back" data-nav="mensagens">← voltar para mensagens</span>
+  <div class="chat-panel">
+    <div class="chat-head"><span class="author-link" data-profile="${escapeHtml(state.chatWith)}">${escapeHtml(other ? other.nome : 'Usuário')}</span></div>
+    <div class="chat-body" id="chatBody">${bubbles || `<p style="color:var(--muted); font-size:13px;">Diga oi 👋</p>`}</div>
+    <form class="chat-foot" id="chatForm">
+      <textarea id="chatInput" placeholder="Escreva uma mensagem..." required></textarea>
+      <button class="btn" type="submit">Enviar</button>
+    </form>
+  </div>`;
+}
+
+/* ===================== NOTIFICATIONS ===================== */
+function renderNotifButton() {
+  const old = document.querySelector('.notif-btn');
+  if (old) old.remove();
+  if (!('Notification' in window) || !state.user) return;
+  if (Notification.permission === 'granted') return;
+  const btn = document.createElement('button');
+  btn.className = 'notif-btn';
+  btn.textContent = '🔔 Ativar notificações';
+  btn.onclick = () => { Notification.requestPermission().then(() => { render(); }); };
+  document.body.appendChild(btn);
+}
+function renderThemeWidget() {
+  document.querySelectorAll('.theme-panel').forEach(el => el.remove());
+  if (!state.themeOpen) return;
+  const current = (localStorage.getItem(THEME_KEY) || '#0a0e17').toLowerCase();
+  const panel = document.createElement('div');
+  panel.className = 'theme-panel';
+  panel.innerHTML = `
+    <h3>Aparência</h3>
+    <p class="sub3">Escolha a cor de fundo — o texto se ajusta sozinho para continuar legível.</p>
+    <div class="swatches">
+      ${THEME_PRESETS.map(p => `<button class="swatch ${p.hex.toLowerCase()===current?'active':''}" style="background:${p.hex};" data-set-theme="${p.hex}" title="${p.nome}"></button>`).join('')}
+    </div>
+    <div class="theme-custom">
+      <input type="color" id="customThemeColor" value="${current.length===7?current:'#0a0e17'}">
+      <label>ou escolha uma cor personalizada</label>
+    </div>`;
+  document.body.appendChild(panel);
+  panel.querySelectorAll('[data-set-theme]').forEach(btn => {
+    btn.addEventListener('click', () => { applyTheme(btn.getAttribute('data-set-theme'), true); state.themeOpen = false; render(); });
+  });
+  const colorInput = panel.querySelector('#customThemeColor');
+  colorInput.addEventListener('input', () => applyTheme(colorInput.value, true));
+}
+function checkNewAnswerNotifications() {
+  if (!notifBaselineSet) {
+    // don't notify retroactively for answers that already existed when this view loaded
+    cache.respostas.forEach(a => notifiedAnswerIds.add(a.id));
+    notifBaselineSet = true;
+    return;
+  }
+  if (!state.user || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const myQuestionIds = new Set(cache.perguntas.filter(q => q.autorEmail === state.user.email).map(q => q.id));
+  cache.respostas.forEach(a => {
+    if (a.autorEmail === state.user.email) return;
+    if (!myQuestionIds.has(a.perguntaId)) return;
+    if (notifiedAnswerIds.has(a.id)) return;
+    notifiedAnswerIds.add(a.id);
+    try {
+      const q = cache.perguntas.find(qq => qq.id === a.perguntaId);
+      new Notification('Nova resposta na CISIA', { body: `${a.autorNome} respondeu "${q ? q.titulo : 'sua pergunta'}"` });
+    } catch (e) {}
+  });
+}
+
+let notifMsgBaselineSet = false;
+let notifiedMsgIds = new Set();
+function checkNewMessageNotifications() {
+  if (!notifMsgBaselineSet) {
+    cache.mensagens.forEach(m => notifiedMsgIds.add(m.id));
+    notifMsgBaselineSet = true;
+    return;
+  }
+  if (!state.user || !('Notification' in window) || Notification.permission !== 'granted') return;
+  cache.mensagens.forEach(m => {
+    if (m.para !== state.user.email || notifiedMsgIds.has(m.id)) return;
+    notifiedMsgIds.add(m.id);
+    try { new Notification('Nova mensagem na CISIA', { body: `${m.deNome}: ${m.texto.slice(0,80)}` }); } catch (e) {}
+  });
+}
+
+/* ===================== AI ASSISTANT ===================== */
+let aiOpen = false;
+let aiTurns = [];
+let aiSampleFn = null;
+let aiAvailable = null; // null = unknown, true/false once decided
+let aiBusy = false;
+let aiContextQuestion = null;
+let aiLastAnswerText = '';
+
+async function ensureSample() {
+  if (aiSampleFn || aiAvailable === false) return aiSampleFn;
+  try {
+    if (window.claude && typeof window.claude.use === 'function') {
+      const s = await Promise.race([window.claude.use('sample'), new Promise(res => setTimeout(()=>res(null), 10500))]);
+      if (s) { aiSampleFn = s; aiAvailable = true; return s; }
+    }
+  } catch (e) {}
+  aiAvailable = false;
+  return null;
+}
+
+function renderAiWidget() {
+  document.querySelectorAll('.ai-fab, .ai-panel').forEach(el => el.remove());
+  if (!state.user) return; // assistant only for logged-in users
+  if (aiAvailable === false) return;
+
+  const fab = document.createElement('button');
+  fab.className = 'ai-fab';
+  fab.innerHTML = '✦ Assistente CISIA';
+  fab.onclick = () => { aiOpen = !aiOpen; renderAiWidget(); };
+  document.body.appendChild(fab);
+
+  if (!aiOpen) return;
+
+  const panel = document.createElement('div');
+  panel.className = 'ai-panel';
+  const msgs = aiTurns.map(t => `<div class="ai-msg ${t.role}">${escapeHtml(t.content)}${t.role==='assistant' && t.insertable ? `<br><button class="ai-insert" data-insert-idx="${t.idx}">Inserir no formulário de resposta</button>` : ''}</div>`).join('')
+    || `<div class="ai-msg system-note">${aiContextQuestion ? 'Peça uma explicação, passo a passo, para ajudar a estruturar sua resposta.' : 'Pergunte algo sobre a matéria — o assistente explica de forma didática, sem só dar a resposta pronta.'}</div>`;
+
+  panel.innerHTML = `
+    <div class="ai-head"><b>✦ Assistente CISIA</b><button data-ai-close="1">×</button></div>
+    <div class="ai-sub">${aiContextQuestion ? 'Contexto: ' + escapeHtml(aiContextQuestion.titulo) : 'Assistente de estudos — API da Anthropic'}</div>
+    <div class="ai-body" id="aiBody">${msgs}${aiBusy ? '<div class="ai-msg system-note">Pensando…</div>' : ''}</div>
+    <form class="ai-foot" id="aiForm">
+      <textarea id="aiInput" placeholder="Digite sua dúvida..." ${aiBusy ? 'disabled' : ''}></textarea>
+      <button type="submit" ${aiBusy ? 'disabled' : ''}>Enviar</button>
+    </form>
+  `;
+  document.body.appendChild(panel);
+  const bodyEl = panel.querySelector('#aiBody');
+  if (bodyEl) bodyEl.scrollTop = bodyEl.scrollHeight;
+
+  panel.querySelector('[data-ai-close]').onclick = () => { aiOpen = false; renderAiWidget(); };
+  panel.querySelectorAll('[data-insert-idx]').forEach(btn => {
+    btn.onclick = () => {
+      const idx = parseInt(btn.getAttribute('data-insert-idx'), 10);
+      const text = aiTurns[idx] ? aiTurns[idx].content : '';
+      const ta = document.getElementById('answerBody');
+      if (ta) { ta.value = text; aiOpen = false; renderAiWidget(); }
+    };
+  });
+  const form = panel.querySelector('#aiForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = panel.querySelector('#aiInput');
+    const text = input.value.trim();
+    if (!text || aiBusy) return;
+    await sendToAi(text);
+  });
+}
+
+async function sendToAi(userText) {
+  aiTurns.push({ role: 'user', content: userText });
+  aiBusy = true;
+  renderAiWidget();
+  const sample = await ensureSample();
+  if (!sample) {
+    aiTurns.push({ role: 'assistant', content: 'O assistente de IA não está disponível nesta janela no momento.' });
+    aiBusy = false;
+    renderAiWidget();
+    return;
+  }
+  const instructions = `Você é o assistente de estudos da plataforma educacional CISIA. ` +
+    `Responda em português, de forma didática e organizada, adequada a um estudante do ${state.user ? state.user.nivel : 'Ensino Médio'}. ` +
+    `Explique o raciocínio passo a passo — nunca dê apenas o resultado final sem explicação. Seja claro, direto e acolhedor.` +
+    (aiContextQuestion ? `\n\nContexto: o estudante está ajudando a responder a seguinte pergunta de um colega, intitulada "${aiContextQuestion.titulo}", com o seguinte enunciado: "${aiContextQuestion.corpo}". Ajude a estruturar uma explicação clara e completa que o estudante pode adaptar e publicar como resposta.` : '');
+
+  const turnsForModel = [{ role: 'user', content: instructions }];
+  aiTurns.forEach(t => turnsForModel.push({ role: t.role, content: t.content }));
+
+  try {
+    const result = await sample(turnsForModel, { cache: false, modelTier: 'default' });
+    const idx = aiTurns.length;
+    aiTurns.push({ role: 'assistant', content: result.text, insertable: !!aiContextQuestion, idx });
+  } catch (err) {
+    let msg = 'Não foi possível obter uma resposta agora. Tente novamente em instantes.';
+    if (err && err.code === 'not_granted') msg = 'É preciso permitir o uso da IA nesta janela para usar o assistente.';
+    if (err && err.code === 'rate_limited') msg = 'Muitas solicitações agora — aguarde um instante e tente de novo.';
+    aiTurns.push({ role: 'assistant', content: msg });
+  }
+  aiBusy = false;
+  renderAiWidget();
+}
+
+/* ===================== EVENTS ===================== */
+function bindEvents() {
+  app.querySelectorAll('[data-nav]').forEach(el => {
+    el.addEventListener('click', () => {
+      state.view = el.getAttribute('data-nav');
+      state.authError = '';
+      aiContextQuestion = null;
+      render();
+    });
+  });
+
+  app.querySelectorAll('[data-profile]').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      if (el.hasAttribute('data-stop')) ev.stopPropagation();
+      if (!state.user) { state.view = 'login'; render(); return; }
+      state.profileEmail = el.getAttribute('data-profile');
+      state.profileEdit = false;
+      state.view = 'perfil';
+      render();
+    });
+  });
+
+  app.querySelectorAll('[data-tab]').forEach(el => {
+    el.addEventListener('click', () => { state.feedTab = el.getAttribute('data-tab'); render(); });
+  });
+
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(loginForm);
+    const email = emailKey(fd.get('email'));
+    const senha = fd.get('senha');
+    state.authBusy = true; render();
+    try {
+      const u = await Store.getDoc('usuarios', email);
+      if (!u) { state.authError = 'E-mail ou senha incorretos.'; state.authBusy = false; render(); return; }
+      const hash = await sha256Hex(senha);
+      if (u.senhaHash !== hash) { state.authError = 'E-mail ou senha incorretos.'; state.authBusy = false; render(); return; }
+      if (isBanned(email)) { state.authError = 'Esta conta foi banida da plataforma.'; state.authBusy = false; render(); return; }
+      state.user = { nome: u.nome, email, nivel: u.nivel, papel: u.papel || 'Aluno' };
+      persistSession();
+      bumpStreak(email);
+      state.view = 'feed'; state.authError = ''; state.authBusy = false; render();
+    } catch (err) {
+      state.authError = 'Não foi possível entrar agora. Tente novamente.'; state.authBusy = false; render();
+    }
+  });
+
+  const cadastroForm = document.getElementById('cadastroForm');
+  if (cadastroForm) cadastroForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(cadastroForm);
+    const email = emailKey(fd.get('email'));
+    const nome = fd.get('nome').trim();
+    const nivel = fd.get('nivel');
+    const papel = fd.get('papel');
+    const senha = fd.get('senha');
+    state.authBusy = true; render();
+    try {
+      const existing = await Store.getDoc('usuarios', email);
+      if (existing) { state.authError = 'Já existe uma conta com este e-mail.'; state.authBusy = false; render(); return; }
+      const senhaHash = await sha256Hex(senha);
+      await Store.setDoc('usuarios', email, { nome, nivel, papel, senhaHash, criadoEm: Date.now(), bio: '', empresaAtual: '', escolaAtual: '', idade: '', estadoCivil: '', sequencia: 1, ultimoAcesso: new Date().toISOString().slice(0,10) });
+      state.user = { nome, email, nivel, papel };
+      persistSession();
+      state.view = 'feed'; state.authError = ''; state.authBusy = false; render();
+    } catch (err) {
+      state.authError = 'Não foi possível criar a conta agora. Tente novamente.'; state.authBusy = false; render();
+    }
+  });
+
+  const novaPerguntaForm = document.getElementById('novaPerguntaForm');
+  if (novaPerguntaForm) novaPerguntaForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(novaPerguntaForm);
+    const q = {
+      titulo: fd.get('titulo').trim(), corpo: fd.get('corpo').trim(),
+      nivel: fd.get('nivel'), disciplina: fd.get('disciplina'),
+      autorNome: state.user.nome, autorEmail: state.user.email, criadoEm: Date.now(), removido: false, ratings: []
+    };
+    const id = await Store.addDoc('perguntas', q);
+    state.activeQuestionId = id; state.view = 'pergunta'; render();
+  });
+
+  const novoProjetoForm = document.getElementById('novoProjetoForm');
+  if (novoProjetoForm) novoProjetoForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(novoProjetoForm);
+    const p = {
+      tipo: fd.get('tipo'), titulo: fd.get('titulo').trim(), descricao: fd.get('descricao').trim(),
+      link: (fd.get('link')||'').trim(), documento: (fd.get('documento')||'').trim(), reacoes: [],
+      autorNome: state.user.nome, autorEmail: state.user.email, criadoEm: Date.now(), removido: false
+    };
+    await Store.addDoc('projetos', p);
+    state.feedTab = 'projetos'; state.view = 'feed'; render();
+  });
+
+  const answerForm = document.getElementById('answerForm');
+  if (answerForm) answerForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(answerForm);
+    const a = {
+      perguntaId: state.activeQuestionId, corpo: fd.get('corpo').trim(),
+      autorNome: state.user.nome, autorEmail: state.user.email, criadoEm: Date.now(), ratings: [], removido: false
+    };
+    await Store.addDoc('respostas', a);
+    render();
+  });
+
+  const adminForm = document.getElementById('adminForm');
+  if (adminForm) adminForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const fd = new FormData(adminForm);
+    if (fd.get('senha') === ADMIN_PASSWORD) { state.isAdmin = true; state.authError = ''; render(); }
+    else { state.authError = 'Senha de administrador incorreta.'; render(); }
+  });
+
+  app.querySelectorAll('[data-open]').forEach(el => {
+    el.addEventListener('click', () => {
+      state.activeQuestionId = el.getAttribute('data-open');
+      state.view = 'pergunta'; render();
+    });
+  });
+
+  const fNivel = document.getElementById('fNivel');
+  if (fNivel) fNivel.addEventListener('change', () => { state.filterNivel = fNivel.value; render(); });
+  const fDisciplina = document.getElementById('fDisciplina');
+  if (fDisciplina) fDisciplina.addEventListener('change', () => { state.filterDisciplina = fDisciplina.value; render(); });
+  const fSearch = document.getElementById('fSearch');
+  if (fSearch) fSearch.addEventListener('input', () => {
+    state.search = fSearch.value; render();
+    const el2 = document.getElementById('fSearch');
+    if (el2) { el2.focus(); el2.setSelectionRange(el2.value.length, el2.value.length); }
+  });
+
+  app.querySelectorAll('[data-answer]').forEach(row => {
+    row.querySelectorAll('.star').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!state.user) { state.view = 'login'; render(); return; }
+        const answerId = row.getAttribute('data-answer');
+        const value = parseInt(btn.getAttribute('data-star'), 10);
+        const a = cache.respostas.find(x => x.id === answerId);
+        if (!a) return;
+        const ratings = (a.ratings || []).slice();
+        const existing = ratings.find(r => r.email === state.user.email);
+        if (existing) existing.value = value; else ratings.push({ email: state.user.email, value });
+        await Store.updateDoc('respostas', answerId, { ratings });
+      });
+    });
+  });
+
+  app.querySelectorAll('[data-question]').forEach(row => {
+    row.querySelectorAll('.star').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!state.user) { state.view = 'login'; render(); return; }
+        const qId = row.getAttribute('data-question');
+        const value = parseInt(btn.getAttribute('data-star'), 10);
+        const q = cache.perguntas.find(x => x.id === qId);
+        if (!q) return;
+        const ratings = (q.ratings || []).slice();
+        const existing = ratings.find(r => r.email === state.user.email);
+        if (existing) existing.value = value; else ratings.push({ email: state.user.email, value });
+        await Store.updateDoc('perguntas', qId, { ratings });
+      });
+    });
+  });
+
+  const editProfileBtn = app.querySelector('[data-edit-profile]');
+  if (editProfileBtn) editProfileBtn.addEventListener('click', () => { state.profileEdit = true; render(); });
+  const cancelEditBtn = app.querySelector('[data-cancel-edit]');
+  if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => { state.profileEdit = false; render(); });
+
+  const perfilForm = document.getElementById('perfilForm');
+  if (perfilForm) perfilForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const fd = new FormData(perfilForm);
+    await Store.updateDoc('usuarios', state.user.email, {
+      bio: fd.get('bio').trim(), empresaAtual: fd.get('empresaAtual').trim(),
+      escolaAtual: fd.get('escolaAtual').trim(), idade: fd.get('idade').trim(), estadoCivil: fd.get('estadoCivil').trim()
+    });
+    state.profileEdit = false; render();
+  });
+
+  app.querySelectorAll('[data-open-chat]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!state.user) { state.view = 'login'; render(); return; }
+      state.chatWith = el.getAttribute('data-open-chat');
+      state.view = 'conversa'; render();
+    });
+  });
+
+  const chatForm = document.getElementById('chatForm');
+  if (chatForm) chatForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const input = document.getElementById('chatInput');
+    const texto = input.value.trim();
+    if (!texto) return;
+    const other = cache.usuarios.find(u => u.email === state.chatWith);
+    await Store.addDoc('mensagens', {
+      de: state.user.email, deNome: state.user.nome, para: state.chatWith, paraNome: other ? other.nome : '',
+      texto, criadoEm: Date.now(), lida: false
+    });
+    render();
+    const body = document.getElementById('chatBody');
+    if (body) body.scrollTop = body.scrollHeight;
+  });
+  if (state.view === 'conversa') {
+    const body = document.getElementById('chatBody');
+    if (body) body.scrollTop = body.scrollHeight;
+    if (state.user) cache.mensagens.filter(m => m.para === state.user.email && m.de === state.chatWith && !m.lida)
+      .forEach(m => Store.updateDoc('mensagens', m.id, { lida: true }));
+  }
+
+  const themeToggleBtn = app.querySelector('[data-action="theme-toggle"]');
+  if (themeToggleBtn) themeToggleBtn.addEventListener('click', () => { state.themeOpen = !state.themeOpen; render(); });
+
+  app.querySelectorAll('[data-react]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!state.user) { state.view = 'login'; render(); return; }
+      const id = btn.getAttribute('data-react');
+      const p = cache.projetos.find(x => x.id === id);
+      if (!p) return;
+      const reacoes = (p.reacoes || []).slice();
+      const idx = reacoes.indexOf(state.user.email);
+      if (idx >= 0) reacoes.splice(idx, 1); else reacoes.push(state.user.email);
+      await Store.updateDoc('projetos', id, { reacoes });
+    });
+  });
+
+  const logoutBtn = app.querySelector('[data-action="logout"]');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => { state.user = null; persistSession(); state.view = 'login'; render(); });
+
+  app.querySelectorAll('[data-toggle-ban]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const email = emailKey(btn.getAttribute('data-toggle-ban'));
+      const banned = isBanned(email);
+      if (banned) await Store.setDoc('banidos', email, { banido: false });
+      else await Store.setDoc('banidos', email, { banido: true, banidoEm: Date.now() });
+    });
+  });
+
+  app.querySelectorAll('[data-remove-question]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await Store.updateDoc('perguntas', btn.getAttribute('data-remove-question'), { removido: true });
+    });
+  });
+  app.querySelectorAll('[data-remove-project]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await Store.updateDoc('projetos', btn.getAttribute('data-remove-project'), { removido: true });
+    });
+  });
+
+  const aiDraftBtn = app.querySelector('[data-ai-draft]');
+  if (aiDraftBtn) aiDraftBtn.addEventListener('click', () => {
+    aiContextQuestion = cache.perguntas.find(x => x.id === state.activeQuestionId) || null;
+    aiTurns = [];
+    aiOpen = true;
+    renderAiWidget();
+  });
+}
+
+/* ===================== BOOTSTRAP ===================== */
+async function boot() {
+  loadTheme();
+  restoreSession();
+  render(); // paint immediately, data lights up as it arrives
+
+  await Store.init();
+  if (state.user) bumpStreak(state.user.email);
+
+  Store.on('perguntas', docs => { cache.perguntas = docs; render(); });
+  Store.on('respostas', docs => { cache.respostas = docs; checkNewAnswerNotifications(); render(); });
+  Store.on('projetos', docs => { cache.projetos = docs; render(); });
+  Store.on('usuarios', docs => { cache.usuarios = docs.map(d => Object.assign({ email: d.id }, d)); render(); });
+  Store.on('banidos', docs => { cache.banidos = docs; render(); });
+  Store.on('mensagens', docs => { cache.mensagens = docs; checkNewMessageNotifications(); render(); });
+
+  render();
+}
+boot();
+</script>
+</body>
+</html>

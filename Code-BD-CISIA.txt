@@ -1,0 +1,188 @@
+-- =============================================
+-- CRIAÇÃO DO BANCO DE DADOS
+-- =============================================
+
+CREATE DATABASE cisia;
+
+-- =============================================
+-- CRIAÇÃO DAS TABELAS
+-- =============================================
+
+USE cisia;
+
+-- 1. Tabela Usuario
+CREATE TABLE Usuario (
+    id_usuario      INT             PRIMARY KEY AUTO_INCREMENT,
+    nome            VARCHAR(100)    NOT NULL,
+    email           VARCHAR(150)    NOT NULL UNIQUE,
+    senha_hash      VARCHAR(255)    NOT NULL,
+    data_nascimento DATE,
+    foto_perfil     VARCHAR(255),
+    bio             TEXT,
+    data_cadastro   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Tabela Postagem
+CREATE TABLE Postagem (
+    id_postagem     INT             PRIMARY KEY AUTO_INCREMENT,
+    id_usuario      INT             NOT NULL,
+    conteudo        TEXT            NOT NULL,
+    data_postagem   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    visibilidade    ENUM('publico', 'privado', 'amigos') NOT NULL DEFAULT 'publico',
+    
+    CONSTRAINT fk_postagem_usuario 
+        FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- 3. Tabela Midia
+CREATE TABLE Midia (
+    id_midia        INT             PRIMARY KEY AUTO_INCREMENT,
+    id_postagem     INT             NOT NULL,
+    url             VARCHAR(500)    NOT NULL,
+    tipo            ENUM('imagem', 'video', 'audio') NOT NULL,
+    
+    CONSTRAINT fk_midia_postagem 
+        FOREIGN KEY (id_postagem) REFERENCES Postagem(id_postagem)
+        ON DELETE CASCADE
+);
+
+-- 4. Tabela Comentario
+CREATE TABLE Comentario (
+    id_comentario   INT             PRIMARY KEY AUTO_INCREMENT,
+    id_postagem     INT             NOT NULL,
+    id_usuario      INT             NOT NULL,
+    conteudo        TEXT            NOT NULL,
+    data_comentario DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_comentario_postagem 
+        FOREIGN KEY (id_postagem) REFERENCES Postagem(id_postagem)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_comentario_usuario 
+        FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- 5. Tabela Curtida (N:N entre Usuario e Postagem)
+CREATE TABLE Curtida (
+    id_usuario      INT             NOT NULL,
+    id_postagem     INT             NOT NULL,
+    data_curtida    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (id_usuario, id_postagem),
+    
+    CONSTRAINT fk_curtida_usuario 
+        FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_curtida_postagem 
+        FOREIGN KEY (id_postagem) REFERENCES Postagem(id_postagem)
+        ON DELETE CASCADE
+);
+
+-- 6. Tabela Seguidor (N:N de Usuario com Usuario)
+CREATE TABLE Seguidor (
+    id_seguidor     INT             NOT NULL,
+    id_seguido      INT             NOT NULL,
+    status          ENUM('pendente', 'aceito', 'bloqueado') NOT NULL DEFAULT 'pendente',
+    data_inicio     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (id_seguidor, id_seguido),
+    
+    CONSTRAINT fk_seguidor_seguidor 
+        FOREIGN KEY (id_seguidor) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_seguidor_seguido 
+        FOREIGN KEY (id_seguido) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT chk_nao_seguir_a_si_mesmo 
+        CHECK (id_seguidor <> id_seguido)
+);
+
+-- 7. Tabela Mensagem
+CREATE TABLE Mensagem (
+    id_mensagem     INT             PRIMARY KEY AUTO_INCREMENT,
+    id_remetente    INT             NOT NULL,
+    id_destinatario INT             NOT NULL,
+    conteudo        TEXT            NOT NULL,
+    data_envio      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    lida            BOOLEAN         NOT NULL DEFAULT FALSE,
+    
+    CONSTRAINT fk_mensagem_remetente 
+        FOREIGN KEY (id_remetente) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_mensagem_destinatario 
+        FOREIGN KEY (id_destinatario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- 8. Tabela Grupo
+CREATE TABLE Grupo (
+    id_grupo        INT             PRIMARY KEY AUTO_INCREMENT,
+    id_criador      INT             NOT NULL,
+    nome            VARCHAR(100)    NOT NULL,
+    descricao       TEXT,
+    data_criacao    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_grupo_criador 
+        FOREIGN KEY (id_criador) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- 9. Tabela Participacao_Grupo (N:N entre Usuario e Grupo)
+CREATE TABLE Participacao_Grupo (
+    id_usuario      INT             NOT NULL,
+    id_grupo        INT             NOT NULL,
+    papel           ENUM('admin', 'moderador', 'membro') NOT NULL DEFAULT 'membro',
+    data_entrada    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    PRIMARY KEY (id_usuario, id_grupo),
+    
+    CONSTRAINT fk_participacao_usuario 
+        FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_participacao_grupo 
+        FOREIGN KEY (id_grupo) REFERENCES Grupo(id_grupo)
+        ON DELETE CASCADE
+);
+
+-- 10. Tabela Notificacao
+CREATE TABLE Notificacao (
+    id_notificacao  INT             PRIMARY KEY AUTO_INCREMENT,
+    id_usuario      INT             NOT NULL,
+    tipo            ENUM('curtida', 'comentario', 'seguidor', 'mensagem', 'grupo') NOT NULL,
+    referencia_id   INT,
+    lida            BOOLEAN         NOT NULL DEFAULT FALSE,
+    data_notificacao DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_notificacao_usuario 
+        FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- 11. Tabela Hashtag
+CREATE TABLE Hashtag (
+    id_hashtag      INT             PRIMARY KEY AUTO_INCREMENT,
+    nome            VARCHAR(50)     NOT NULL UNIQUE
+);
+
+-- 12. Tabela Postagem_Hashtag (N:N entre Postagem e Hashtag)
+CREATE TABLE Postagem_Hashtag (
+    id_postagem     INT             NOT NULL,
+    id_hashtag      INT             NOT NULL,
+    
+    PRIMARY KEY (id_postagem, id_hashtag),
+    
+    CONSTRAINT fk_ph_postagem 
+        FOREIGN KEY (id_postagem) REFERENCES Postagem(id_postagem)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT fk_ph_hashtag 
+        FOREIGN KEY (id_hashtag) REFERENCES Hashtag(id_hashtag)
+        ON DELETE CASCADE
+);
